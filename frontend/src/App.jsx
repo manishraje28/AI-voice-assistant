@@ -41,7 +41,7 @@ function App() {
   const handleStop = () => {
     stopAssistant();
     // Redirect to dashboard after ending the call
-    window.location.href = "http://127.0.0.1:5501/dashboard/index.html";
+    window.location.href = "http://127.0.0.1:5501/dashboard/dashboard.html";
   };
 
   return (
