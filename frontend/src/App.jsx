@@ -4,17 +4,10 @@ import ActiveCallDetails from "./call/ActiveCallDetails";
 
 function App() {
   const [started, setStarted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [assistantIsSpeaking, setAssistantIsSpeaking] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [callId, setCallId] = useState("");
-  const [callResult, setCallResult] = useState(null);
-  const [loadingResult, setLoadingResult] = useState(false);
-
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     vapi
@@ -35,103 +28,44 @@ function App() {
       .on("volume-level", (level) => {
         setVolumeLevel(level);
       });
+
+    // Automatically start the assistant when the page loads
+    handleStart();
   }, []);
 
-  const handleInputChange = (setter) => (event) => {
-    setter(event.target.value);
-  };
-
   const handleStart = async () => {
-    setLoading(true);
-    const data = await startAssistant(firstName, lastName, email, phoneNumber);
+    const data = await startAssistant();
     setCallId(data.id);
   };
 
   const handleStop = () => {
     stopAssistant();
-    getCallDetails();
+    // Redirect to dashboard after ending the call
+    window.location.href = "http://127.0.0.1:5501/dashboard/index.html";
   };
-
-  const getCallDetails = (interval = 3000) => {
-    setLoadingResult(true);
-    fetch("/call-details?call_id=" + callId)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.analysis && data.summary) {
-          console.log(data);
-          setCallResult(data);
-          setLoadingResult(false);
-        } else {
-          setTimeout(() => getCallDetails(interval), interval);
-        }
-      })
-      .catch((error) => alert(error));
-  };
-
-  const showForm = !loading && !started && !loadingResult && !callResult;
-  const allFieldsFilled = firstName && lastName && email && phoneNumber;
 
   return (
     <div className="app-container">
-      {showForm && (
-        <>
-          <h1>Contact Details (Required)</h1>
-          <input
-            type="text"
-            placeholder="First Name"
-            value={firstName}
-            className="input-field"
-            onChange={handleInputChange(setFirstName)}
+      <div className="mainb" style={{
+    border: "2px solid #007bff", 
+    borderRadius: "10px",  
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    padding:"60px"
+  }}>
+        {(loading) && <div className="loading"></div>}
+        {loading && <p>Starting assistant... please wait</p>}
+        {started && (
+          <ActiveCallDetails
+            assistantIsSpeaking={assistantIsSpeaking}
+            volumeLevel={volumeLevel}
+            endCallCallback={handleStop}
           />
-          <input
-            type="text"
-            placeholder="Last Name"
-            value={lastName}
-            className="input-field"
-            onChange={handleInputChange(setLastName)}
-          />
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            className="input-field"
-            onChange={handleInputChange(setEmail)}
-          />
-          <input
-            type="tel"
-            placeholder="Phone number"
-            value={phoneNumber}
-            className="input-field"
-            onChange={handleInputChange(setPhoneNumber)}
-          />
-          {!started && (
-            <button
-              onClick={handleStart}
-              disabled={!allFieldsFilled}
-              className="button"
-            >
-              Start Application Call
-            </button>
-          )}
-        </>
-      )}
-      {loadingResult && <p>Loading call details... please wait</p>}
-      {!loadingResult && callResult && (
-        <div className="call-result">
-          <p>Qualified: {callResult.analysis.structuredData.is_qualified.toString()}</p>
-          <p>{callResult.summary}</p>
-        </div>
-      )}
-      {(loading || loadingResult) && <div className="loading"></div>}
-      {started && (
-        <ActiveCallDetails
-          assistantIsSpeaking={assistantIsSpeaking}
-          volumeLevel={volumeLevel}
-          endCallCallback={handleStop}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 export default App;
+
+
